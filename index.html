@@ -25,6 +25,9 @@ h1{margin:0;font-size:30px;font-weight:800;display:flex;align-items:center;gap:1
 .b-out svg{color:#B4561E}
 .b-wa{background:#25D366;color:#fff;box-shadow:0 3px 0 #1A9E4C;padding:7px 12px;font-size:16px;text-decoration:none}
 .b-xl{background:#1D6F42;color:#fff;box-shadow:0 4px 0 #134A2C}
+.b-img{background:#D7ECF7;color:#1E4A6B;box-shadow:0 4px 0 #9FC6DD}
+.b-img svg{color:#1F78B4}
+.b-wimg{background:#128C7E;color:#fff;box-shadow:0 3px 0 #0B5E54;padding:7px 12px;font-size:16px;margin-inline-start:6px}
 .b-undo{background:#EDE3F7;color:#4B2A73;box-shadow:0 4px 0 #CDB8E6}
 .b-undo svg{color:#6B3FA0}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
@@ -90,6 +93,7 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
 <symbol id="i-save" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol>
 <symbol id="i-xl" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 11l5 6M14 11l-5 6"/></g></symbol>
 <symbol id="i-pen" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></symbol>
+<symbol id="i-img" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></g></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" d="M12 5v14M5 12h14"/></symbol>
 <symbol id="i-msg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M4 5h16v11H8l-4 4z"/></symbol>
 <symbol id="i-left" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" d="m15 6-6 6 6 6"/></symbol>
@@ -104,12 +108,25 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
       <button class="btn b-xl" id="xl"><svg><use href="#i-xl"/></svg> تصدير Excel</button>
       <button class="btn b-undo" id="undo"><svg><use href="#i-back"/></svg> تراجع عن آخر خطوة</button>
       <button class="btn b-nav" id="showAdd"><svg><use href="#i-plus"/></svg> إضافة مدعو</button>
+      <button class="btn b-img" id="showImg"><svg><use href="#i-img"/></svg> صورة الدعوة</button>
       <button class="btn b-nav" id="showMsg"><svg><use href="#i-msg"/></svg> نص الدعوة</button>
       <button class="btn b-nav" id="logout" title="تسجيل الخروج">خروج</button>
     </div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span id="save" class="savebadge s-wait">جارٍ الاتصال بقاعدة البيانات…</span><span id="status" class="note">جارٍ تحميل القائمة…</span></div>
 
+  <div class="panel hidden" id="imgPanel" style="background:#E8F1FA;color:#1E4A6B;box-shadow:0 3px 0 #A9C4DE">
+    <b>صورة الدعوة</b> — ارفع صورة بطاقة الدعوة مرة واحدة، فيظهر زر «صورة» أمام كل مدعو.
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px">
+      <img id="imgPrev" alt="" style="max-height:160px;border-radius:10px;display:none;box-shadow:0 2px 6px rgba(0,0,0,.15)">
+      <label class="btn b-main" style="cursor:pointer"><svg><use href="#i-img"/></svg> اختيار صورة<input type="file" id="imgFile" accept="image/*" style="display:none"></label>
+      <button class="btn b-out" id="imgDel"><svg><use href="#i-ban"/></svg> حذف الصورة</button>
+      <span id="imgMsg"></span>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">فتح محادثة واتساب في:
+      <select id="waMode"><option value="web">واتساب ويب (تبويب واحد في المتصفح)</option><option value="app">تطبيق واتساب على الكمبيوتر</option></select>
+    </div>
+  </div>
   <div class="panel hidden" id="msgPanel">
     <b>نص دعوة الواتساب</b> — اكتب <b>{الاسم}</b> حيث تريد أن يظهر اسم المدعو.
     <textarea id="tpl" placeholder="السلام عليكم {الاسم}، يسعدنا دعوتكم لحضور حفل زواج…"></textarea>
@@ -194,6 +211,17 @@ function filtered(){
 function stats(){const a=allRows();$("kCount").textContent=a.filter(r=>r.k).length.toLocaleString("en-US");const inn=a.filter(r=>!r.out),s=inn.filter(r=>r.sent).length;
   $("sAll").textContent=inn.length.toLocaleString("en-US");$("sSent").textContent=s.toLocaleString("en-US");$("sLeft").textContent=(inn.length-s).toLocaleString("en-US");$("sOut").textContent=(a.length-inn.length).toLocaleString("en-US");
   $("cIn").textContent=inn.length;$("cBiz").textContent=inn.filter(r=>r.biz).length;$("cOut").textContent=a.length-inn.length;}
+let inviteImg="",imgBlobP=null,imgFileObj=null;
+function setImg(d){inviteImg=d||"";const p=$("imgPrev");if(inviteImg){p.src=inviteImg;p.style.display="";
+  imgBlobP=new Promise(res=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext("2d").drawImage(im,0,0);c.toBlob(b=>res(b),"image/png")};im.src=inviteImg});
+  fetch(inviteImg).then(r=>r.blob()).then(b=>{imgFileObj=new File([b],"دعوة-الزواج.jpg",{type:"image/jpeg"})});
+ }else{p.style.display="none";imgBlobP=null;imgFileObj=null}render()}
+function waMode(){try{return localStorage.getItem("waMode")||"web"}catch(e){return "web"}}
+function waChat(r){return waMode()==="app"?"whatsapp://send?phone="+r.phone:"https://web.whatsapp.com/send?phone="+r.phone}
+const isMobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
+function compress(file){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{let w=im.naturalWidth,hh=im.naturalHeight,m=1400,s=Math.min(1,m/Math.max(w,hh));
+  const go=(sc,q)=>{const c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(hh*sc);const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);return c.toDataURL("image/jpeg",q)};
+  let q=.88,sc=s,d=go(sc,q);while(d.length>900000&&(q>.5||sc>.3)){if(q>.55)q-=.08;else sc*=.85;d=go(sc,q)}res(d)};im.onerror=rej;im.src=URL.createObjectURL(file)})}
 function waLink(r){const t=tpl.replace(/\{الاسم\}/g,r.name);return "https://wa.me/"+r.phone+(t?"?text="+encodeURIComponent(t):"")}
 function relOpts(v){let h='<option value="">—</option>';const list=RELS.includes(v)||!v?RELS:[v,...RELS];for(const x of list)h+=`<option${x===v?" selected":""}>${esc(x)}</option>`;return h}
 let cur=[];
@@ -221,7 +249,7 @@ function render(){
     <td class="nmcell"><span class="nm">${esc(r.name)}</span><button class="edn" title="تعديل الاسم" aria-label="تعديل الاسم"><svg><use href="#i-pen"/></svg></button>${r.star?'<span class="tag t-star">مميز</span>':""}${r.biz?'<span class="tag t-biz">أعمال</span>':""}${r.added?'<span class="tag t-add">مضاف</span>':""}</td>
     <td class="ph">${fmt(r.phone)}</td>
     <td><select class="rel">${relOpts(r.rel)}</select></td>
-    <td><a class="btn b-wa wa" href="${waLink(r)}" target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg> أرسل</a></td>
+    <td style="white-space:nowrap"><a class="btn b-wa wa" href="${waLink(r)}" target="_blank" rel="noopener" title="إرسال نص الدعوة"><svg><use href="#i-wa"/></svg> نص</a>${inviteImg?`<button class="btn b-wimg wimg" title="إرسال صورة الدعوة"><svg><use href="#i-img"/></svg> صورة</button>`:""}</td>
     <td style="text-align:center"><input type="checkbox" class="chk sent"${r.sent?" checked":""}></td>
     <td>${r.out?'<button class="btn b-nav tog" style="padding:6px 10px;font-size:15px"><svg><use href="#i-back"/></svg> استرجاع</button>':'<button class="btn b-out tog" style="padding:6px 10px;font-size:15px"><svg><use href="#i-ban"/></svg> استبعاد</button>'}</td></tr>`}).join("");
   $("cRes").textContent="نتيجة التصفية: "+cur.length.toLocaleString("en-US")+" اسم";$("pinfo").textContent=`صفحة ${page+1} من ${pages} — ${cur.length.toLocaleString("en-US")} اسم`;
@@ -268,6 +296,25 @@ $("saveNow").onclick=async()=>{
     if(pendCount()){setSave("s-bad","بقي "+pendCount()+" تعديل لم يُحفظ — اضغط «حفظ الآن» مرة أخرى");return}
     setSave("s-ok","✓ تم الحفظ والتحقق — في قاعدة البيانات: "+kk+" مؤشر عليهم، "+o+" مستبعد، "+se+" أُرسلت");toast("تم الحفظ — "+kk+" مؤشر عليهم محفوظ");$("fsInfo").textContent="✓ محفوظ: "+kk+" مؤشر"}
   catch(e){setSave("s-bad","تعذّر التحقق — علاماتك محفوظة مؤقتاً في هذا الجهاز، أعد المحاولة")}};
+async function sendImg(r){
+  if(!inviteImg)return toast("ارفع صورة الدعوة أولاً");
+  const mark=()=>{if(!r.sent)apply([{r,patch:{s:true}}],"إرسال دعوة")};
+  if(isMobile&&imgFileObj&&navigator.canShare&&navigator.canShare({files:[imgFileObj]})){
+    try{await navigator.share({files:[imgFileObj]});mark()}catch(e){if(e.name!=="AbortError")toast("تعذّرت المشاركة")}return}
+  let copied=false;
+  try{await navigator.clipboard.write([new ClipboardItem({"image/png":imgBlobP})]);copied=true}catch(e){}
+  if(waMode()==="app")location.href=waChat(r);else window.open(waChat(r),"wa_web");
+  mark();
+  toast(copied?"الصورة منسوخة — في واتساب اضغط Ctrl+V ثم Enter":"لم تُنسخ الصورة — أعد المحاولة");
+}
+$("showImg").onclick=()=>$("imgPanel").classList.toggle("hidden");
+try{$("waMode").value=waMode()}catch(e){}
+$("waMode").onchange=e=>{try{localStorage.setItem("waMode",e.target.value)}catch(_){};toast("تم")};
+$("imgFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;$("imgMsg").textContent="جارٍ التجهيز…";
+  try{const d=await compress(f);setImg(d);if(db){await fs.doc("settings/image").set({data:d,t:Date.now()});}
+    $("imgMsg").textContent="✓ حُفظت صورة الدعوة";toast("حُفظت صورة الدعوة")}catch(err){$("imgMsg").textContent="تعذّر حفظ الصورة: "+(err.code||err.message)}e.target.value=""};
+$("imgDel").onclick=async()=>{if(!inviteImg)return;if(Date.now()-($("imgDel").t||0)>4000){$("imgDel").t=Date.now();toast("اضغط مرة ثانية لحذف الصورة");return}
+  setImg("");try{await fs.doc("settings/image").delete()}catch(e){}$("imgMsg").textContent="حُذفت الصورة"};
 /* ---- events ---- */
 $("tb").addEventListener("change",e=>{const tr=e.target.closest("tr");if(!tr)return;const r=rowMap().get(tr.dataset.k);if(!r)return;
   if(e.target.classList.contains("rel"))apply([{r,patch:{r:e.target.value}}],"تغيير صلة القرابة");
@@ -278,6 +325,7 @@ $("tb").addEventListener("click",e=>{const tr=e.target.closest("tr");if(!tr)retu
     const done=ok=>{const v=i.value.trim().replace(/\s+/g," ");i.dataset.done="1";i.blur();if(ok&&v&&v!==r.name){apply([{r,patch:{nm:v}}],"تعديل الاسم");toast("تم تعديل الاسم — يمكنك التراجع")}else render()};
     i.onkeydown=ev=>{if(ev.key==="Enter")done(true);if(ev.key==="Escape")done(false)};td.querySelector(".nmok").onclick=()=>done(true);td.querySelector(".nmno").onclick=()=>done(false);return}
   if(e.target.closest(".nmok,.nmno,.nmin"))return;
+  if(e.target.closest(".wimg")){sendImg(r);return}
   if(e.target.closest(".tog")){apply([{r,patch:{o:!r.out}}],r.out?"استرجاع":"استبعاد");toast(r.out?"تم الاسترجاع":"تم الاستبعاد — يمكنك التراجع")}
   else if(e.target.closest(".wa")&&!r.sent){setTimeout(()=>apply([{r,patch:{s:true}}],"إرسال دعوة"),300)}});
 $("selAll").addEventListener("change",e=>{const m=rowMap(),v=e.target.checked,ch=[];document.querySelectorAll("#tb tr").forEach(tr=>{const r=m.get(tr.dataset.k);if(r&&r.k!==v)ch.push({r,patch:{k:v}})});apply(ch,v?"تأشير الصفحة":"إلغاء تأشير الصفحة");});
@@ -357,6 +405,7 @@ async function connect(){
       state=ns;added=na;
       if(!s.metadata.fromCache){clearTimeout(t);$("status").textContent="";if(first){first=false;if(pendCount())flushPending();else if(!inflight)setSave("s-ok","✓ متصل — كل تعديل يُحفظ فوراً في قاعدة البيانات")}}
       render()},e=>{clearTimeout(t);setSave("s-bad","انقطع الاتصال بقاعدة البيانات — تعديلاتك محفوظة مؤقتاً في هذا الجهاز، أعد فتح الصفحة")});
+    fs.doc("settings/image").onSnapshot(s=>{const d=s.exists?(s.data().data||""):"";if(d!==inviteImg)setImg(d)},()=>{});
     db.doc("settings/main").onSnapshot(s=>{if(s.exists){tpl=(s.data().tpl)||"";if(document.activeElement!==$("tpl"))$("tpl").value=tpl;render()}},()=>{});
   }catch(e){setSave("s-bad","الحفظ غير متاح حالياً")}
 }
