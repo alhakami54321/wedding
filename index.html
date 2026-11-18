@@ -72,6 +72,11 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
 .fbox{display:flex;flex-direction:column;align-items:stretch;gap:4px}
 .fcnt{background:#1E4A38;color:#fff;border-radius:8px;padding:3px 10px;font-size:16px;font-weight:700;text-align:center;box-shadow:0 2px 0 #0F2C20}
 .bar{align-items:flex-start!important}
+.nmcell .edn{border:0;background:#DCE9F5;color:#2F6FA8;border-radius:8px;width:32px;height:30px;margin-inline-start:8px;cursor:pointer;vertical-align:middle;box-shadow:0 2px 0 #A9C4DE}
+.nmcell .edn svg{width:17px;height:17px}
+.nmin{font-family:inherit;font-size:17px;padding:6px 10px;border:2px solid #6B988D;border-radius:8px;width:min(320px,100%)}
+.nmok,.nmno{border:0;border-radius:8px;padding:6px 10px;margin-inline-start:6px;cursor:pointer;font-family:inherit;font-size:15px;font-weight:700}
+.nmok{background:#8FB59D;color:#fff;box-shadow:0 2px 0 #6B988D}.nmno{background:#F7E6D6;color:#7A4416;box-shadow:0 2px 0 #E2C3A5}
 .empty{padding:40px;text-align:center;font-size:19px}
 @media(max-width:760px){th:nth-child(1),td:nth-child(1){display:none}td.ph{font-size:15px}.btn{font-size:15px;padding:8px 11px}}
 </style>
@@ -84,6 +89,7 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
 <symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
 <symbol id="i-save" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol>
 <symbol id="i-xl" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 11l5 6M14 11l-5 6"/></g></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" d="M12 5v14M5 12h14"/></symbol>
 <symbol id="i-msg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M4 5h16v11H8l-4 4z"/></symbol>
 <symbol id="i-left" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" d="m15 6-6 6 6 6"/></symbol>
@@ -170,7 +176,7 @@ function chunkOf(r){return r.added?"added":"c"+Math.floor((r.n-1)/100)}
 function allRows(){
   const out=[];
   for(const b of base){const s=(state["c"+Math.floor((b[0]-1)/100)]||{})[b[2]]||{};
-    out.push({n:b[0],name:b[1],phone:b[2],rel:s.r!==undefined?s.r:b[3],biz:!!b[4],star:!!b[5]||!!b[6],sent:!!s.s,k:!!s.k,out:s.o!==undefined?!!s.o:false,added:false});}
+    out.push({n:b[0],name:s.nm||b[1],orig:b[1],phone:b[2],rel:s.r!==undefined?s.r:b[3],biz:!!b[4],star:!!b[5]||!!b[6],sent:!!s.s,k:!!s.k,out:s.o!==undefined?!!s.o:false,added:false});}
   for(const [id,a] of Object.entries(added)){if(a&&!a.del)out.push({n:100000+(a.t||0),id,name:a.name,phone:a.phone,rel:a.r||"",biz:false,star:false,sent:!!a.s,k:!!a.k,out:!!a.o,added:true});}
   return out;
 }
@@ -205,13 +211,14 @@ function counts(){
   $("cSent").textContent="العدد: "+(fs===""?rows.length:fs==="1"?ns:rows.length-ns);
 }
 function render(){
+  {const ae=document.activeElement;if(ae&&ae.classList&&ae.classList.contains("nmin")&&!ae.dataset.done)return;}
   stats();counts();cur=filtered();const pages=Math.max(1,Math.ceil(cur.length/PER));if(page>=pages)page=pages-1;
   const slice=cur.slice(page*PER,page*PER+PER);
   if(!slice.length){$("tb").innerHTML='<tr><td colspan="8" class="empty">لا توجد أسماء هنا</td></tr>'}
   else $("tb").innerHTML=slice.map((r,i)=>{const k=key(r);return `<tr class="${r.sent?"sent":""}" data-k="${esc(k)}">
     <td><input type="checkbox" class="sel rs" title="تأشير"${r.k?" checked":""}></td>
     <td class="num">${page*PER+i+1}</td>
-    <td>${esc(r.name)}${r.star?'<span class="tag t-star">مميز</span>':""}${r.biz?'<span class="tag t-biz">أعمال</span>':""}${r.added?'<span class="tag t-add">مضاف</span>':""}</td>
+    <td class="nmcell"><span class="nm">${esc(r.name)}</span><button class="edn" title="تعديل الاسم" aria-label="تعديل الاسم"><svg><use href="#i-pen"/></svg></button>${r.star?'<span class="tag t-star">مميز</span>':""}${r.biz?'<span class="tag t-biz">أعمال</span>':""}${r.added?'<span class="tag t-add">مضاف</span>':""}</td>
     <td class="ph">${fmt(r.phone)}</td>
     <td><select class="rel">${relOpts(r.rel)}</select></td>
     <td><a class="btn b-wa wa" href="${waLink(r)}" target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg> أرسل</a></td>
@@ -242,10 +249,10 @@ function flushPending(){const p=lsGet("wed_pending")||{};for(const d in p){const
   if(d==="added"){for(const id in obj)added[id]=obj[id]}else{state[d]=Object.assign({},state[d]||{},obj)}writeDoc(d,obj)}if(Object.keys(p).length)render()}
 async function apply(changes,label,noUndo){
   if(!changes.length)return;
-  const prev=changes.map(c=>({r:c.r,patch:{r:c.r.rel,s:c.r.sent,o:c.r.out,k:c.r.k}}));
+  const prev=changes.map(c=>({r:c.r,patch:Object.assign({r:c.r.rel,s:c.r.sent,o:c.r.out,k:c.r.k},"nm"in c.patch?{nm:c.r.added?c.r.name:(c.r.name===c.r.orig?"":c.r.name)}:{})}));
   const groups={};
   for(const {r,patch} of changes){const d=chunkOf(r);
-    if(r.added){const a=Object.assign({},added[r.id]);if("r"in patch)a.r=patch.r;if("s"in patch)a.s=patch.s;if("o"in patch)a.o=patch.o;if("k"in patch)a.k=patch.k;added[r.id]=a;(groups.added=groups.added||{})[r.id]=a;}
+    if(r.added){const a=Object.assign({},added[r.id]);if("r"in patch)a.r=patch.r;if("s"in patch)a.s=patch.s;if("o"in patch)a.o=patch.o;if("k"in patch)a.k=patch.k;if("nm"in patch&&patch.nm)a.name=patch.nm;added[r.id]=a;(groups.added=groups.added||{})[r.id]=a;}
     else{state[d]=Object.assign({},state[d]);const s=Object.assign({},state[d][r.phone]||{},patch);state[d][r.phone]=s;(groups[d]=groups[d]||{})[r.phone]=s;}}
   if(!noUndo){undoStack.push({prev,label});if(undoStack.length>50)undoStack.shift()}
   render();
@@ -267,6 +274,10 @@ $("tb").addEventListener("change",e=>{const tr=e.target.closest("tr");if(!tr)ret
   else if(e.target.classList.contains("sent"))apply([{r,patch:{s:e.target.checked}}],"علامة الإرسال");
   else if(e.target.classList.contains("rs"))apply([{r,patch:{k:e.target.checked}}],"تأشير");});
 $("tb").addEventListener("click",e=>{const tr=e.target.closest("tr");if(!tr)return;const r=rowMap().get(tr.dataset.k);if(!r)return;
+  if(e.target.closest(".edn")){const td=tr.querySelector(".nmcell");td.innerHTML=`<input class="nmin" value="${esc(r.name)}"><button class="nmok">حفظ</button><button class="nmno">إلغاء</button>`;const i=td.querySelector(".nmin");i.focus();i.select();
+    const done=ok=>{const v=i.value.trim().replace(/\s+/g," ");i.dataset.done="1";i.blur();if(ok&&v&&v!==r.name){apply([{r,patch:{nm:v}}],"تعديل الاسم");toast("تم تعديل الاسم — يمكنك التراجع")}else render()};
+    i.onkeydown=ev=>{if(ev.key==="Enter")done(true);if(ev.key==="Escape")done(false)};td.querySelector(".nmok").onclick=()=>done(true);td.querySelector(".nmno").onclick=()=>done(false);return}
+  if(e.target.closest(".nmok,.nmno,.nmin"))return;
   if(e.target.closest(".tog")){apply([{r,patch:{o:!r.out}}],r.out?"استرجاع":"استبعاد");toast(r.out?"تم الاسترجاع":"تم الاستبعاد — يمكنك التراجع")}
   else if(e.target.closest(".wa")&&!r.sent){setTimeout(()=>apply([{r,patch:{s:true}}],"إرسال دعوة"),300)}});
 $("selAll").addEventListener("change",e=>{const m=rowMap(),v=e.target.checked,ch=[];document.querySelectorAll("#tb tr").forEach(tr=>{const r=m.get(tr.dataset.k);if(r&&r.k!==v)ch.push({r,patch:{k:v}})});apply(ch,v?"تأشير الصفحة":"إلغاء تأشير الصفحة");});
