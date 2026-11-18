@@ -28,6 +28,15 @@ h1{margin:0;font-size:30px;font-weight:800;display:flex;align-items:center;gap:1
 .b-img{background:#D7ECF7;color:#1E4A6B;box-shadow:0 4px 0 #9FC6DD}
 .b-img svg{color:#1F78B4}
 .b-wimg{background:#128C7E;color:#fff;box-shadow:0 3px 0 #0B5E54;padding:7px 12px;font-size:16px;margin-inline-start:6px}
+.b-seq{background:#25D366;color:#fff;box-shadow:0 4px 0 #1A9E4C;font-size:18px}
+#seq{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:15;background:#fff;border-radius:18px;padding:14px 18px;box-shadow:0 6px 0 #9FC6DD,0 10px 30px rgba(30,74,56,.25);border:2px solid #25D366;width:min(760px,94vw)}
+#seq .row1{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#seq .who{font-size:22px;font-weight:800}
+#seq .ph{direction:ltr;text-align:right;font-size:18px;color:#4E6E62}
+#seq .prog{height:10px;background:#E3ECEE;border-radius:6px;margin:10px 0;overflow:hidden}
+#seq .prog div{height:100%;background:#25D366}
+#seqNext{font-size:22px;padding:14px 26px}
+#seqNext:disabled{opacity:.5}
 .b-undo{background:#EDE3F7;color:#4B2A73;box-shadow:0 4px 0 #CDB8E6}
 .b-undo svg{color:#6B3FA0}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
@@ -105,6 +114,7 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
   <div class="top">
     <h1><svg width="30" height="30" style="color:#B4561E"><use href="#i-heart"/></svg> زواج — قائمة المدعوين</h1>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn b-seq" id="seqOpen"><svg><use href="#i-wa"/></svg> إرسال للمؤشر عليهم</button>
       <button class="btn b-xl" id="xl"><svg><use href="#i-xl"/></svg> تصدير Excel</button>
       <button class="btn b-undo" id="undo"><svg><use href="#i-back"/></svg> تراجع عن آخر خطوة</button>
       <button class="btn b-nav" id="showAdd"><svg><use href="#i-plus"/></svg> إضافة مدعو</button>
@@ -179,6 +189,17 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
   </div>
 </div>
 <div id="floatSave"><button class="btn b-main" id="saveNow"><svg><use href="#i-save"/></svg><span>حفظ الآن</span></button><div id="fsInfo"></div><div id="fsK"><div style="font-size:14px">المؤشر عليهم</div><div id="kCount" style="font-size:30px;font-weight:800">0</div></div></div>
+<div id="seq" class="hidden">
+  <div class="row1"><b style="font-size:19px">الإرسال المتتابع للمؤشر عليهم</b><span id="seqCount" style="font-size:18px;font-weight:700"></span></div>
+  <div class="prog"><div id="seqBar" style="width:0%"></div></div>
+  <div class="row1"><div><div class="who" id="seqWho"></div><div class="ph" id="seqPh"></div></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">نوع الإرسال: <select id="seqType"><option value="img">صورة</option><option value="txt">نص</option></select></div></div>
+  <div class="row1" style="margin-top:12px">
+    <button class="btn b-seq" id="seqNext"><svg><use href="#i-wa"/></svg> افتح محادثة التالي</button>
+    <div style="display:flex;gap:8px"><button class="btn b-nav" id="seqSkip">تخطّي</button><button class="btn b-out" id="seqStop">إيقاف</button></div>
+  </div>
+  <div id="seqHint" class="note" style="margin-top:8px">تُفتح المحادثة في نافذة واتساب بجانب الصفحة: اضغط Ctrl+V ثم Enter، ثم عُد واضغط «افتح محادثة التالي».</div>
+</div>
 <div id="toast"></div>
 <script>
 const RELS=["أب","أم","والد","والدة","أخ","أخت","ابن","ابنة","زوجة","عم","عمة","خال","خالة","جد","جدة","ابن عم","بنت عم","ابن عمة","ابن خال","بنت خال","ابن خالة","ابن أخ","ابن أخت","زوج أخت","نسيب","قريب","جار","صديق","زميل عمل","أخرى"];
@@ -239,6 +260,7 @@ function counts(){
   $("cSent").textContent="العدد: "+(fs===""?rows.length:fs==="1"?ns:rows.length-ns);
 }
 function render(){
+  try{seqRender()}catch(e){}
   {const ae=document.activeElement;if(ae&&ae.classList&&ae.classList.contains("nmin")&&!ae.dataset.done)return;}
   stats();counts();cur=filtered();const pages=Math.max(1,Math.ceil(cur.length/PER));if(page>=pages)page=pages-1;
   const slice=cur.slice(page*PER,page*PER+PER);
@@ -315,6 +337,26 @@ $("imgFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;$("imgMsg
     $("imgMsg").textContent="✓ حُفظت صورة الدعوة";toast("حُفظت صورة الدعوة")}catch(err){$("imgMsg").textContent="تعذّر حفظ الصورة: "+(err.code||err.message)}e.target.value=""};
 $("imgDel").onclick=async()=>{if(!inviteImg)return;if(Date.now()-($("imgDel").t||0)>4000){$("imgDel").t=Date.now();toast("اضغط مرة ثانية لحذف الصورة");return}
   setImg("");try{await fs.doc("settings/image").delete()}catch(e){}$("imgMsg").textContent="حُذفت الصورة"};
+/* ---- sequential send ---- */
+let seqSkip=new Set(),seqCur=null;
+function seqQueue(){return allRows().filter(r=>r.k&&!r.out).sort((a,b)=>a.n-b.n)}
+function seqRender(){if($("seq").classList.contains("hidden"))return;const q=seqQueue(),tot=q.length,done=q.filter(r=>r.sent).length;
+  const left=q.filter(r=>!r.sent&&!seqSkip.has(key(r)));seqCur=left[0]||null;
+  $("seqCount").textContent="أُرسلت "+done+" من "+tot;$("seqBar").style.width=(tot?Math.round(done/tot*100):0)+"%";
+  if(seqCur){$("seqWho").textContent="التالي: "+seqCur.name;$("seqPh").textContent=fmt(seqCur.phone)+(seqCur.rel?"  —  "+seqCur.rel:"");$("seqNext").disabled=false}
+  else{$("seqWho").textContent=tot?"✓ انتهى الإرسال لكل المؤشر عليهم":"لا يوجد مؤشر عليهم";$("seqPh").textContent=seqSkip.size?("تخطّيت "+seqSkip.size+" — اضغط «إيقاف» ثم ابدأ من جديد لإعادتهم"):"";$("seqNext").disabled=true}}
+function waWin(url){const w=Math.min(900,Math.round(screen.availWidth*.5));return window.open(url,"wa_seq","popup=yes,width="+w+",height="+(screen.availHeight-60)+",left=0,top=0")}
+$("seqOpen").onclick=()=>{$("seq").classList.remove("hidden");$("seqType").value=inviteImg?"img":"txt";seqRender();$("seqNext").focus()};
+$("seqStop").onclick=()=>{$("seq").classList.add("hidden");seqSkip.clear()};
+$("seqSkip").onclick=()=>{if(seqCur){seqSkip.add(key(seqCur));seqRender()}};
+$("seqNext").onclick=async()=>{const r=seqCur;if(!r)return;const t=$("seqType").value;
+  if(t==="img"&&!inviteImg){toast("ارفع صورة الدعوة أولاً من زر «صورة الدعوة»");return}
+  if(t==="img"){
+    if(isMobile&&imgFileObj&&navigator.canShare&&navigator.canShare({files:[imgFileObj]})){try{await navigator.share({files:[imgFileObj]})}catch(e){if(e.name==="AbortError")return}}
+    else{let copied=false;const pr=navigator.clipboard.write([new ClipboardItem({"image/png":imgBlobP})]).then(()=>{copied=true}).catch(()=>{});
+      if(waMode()==="app")location.href=waChat(r);else waWin(waChat(r));await pr;toast(copied?"الصورة منسوخة — Ctrl+V ثم Enter":"لم تُنسخ الصورة")}}
+  else{const tx=tpl.replace(/\{الاسم\}/g,r.name);if(isMobile)window.open(waLink(r),"_blank");else if(waMode()==="app")location.href="whatsapp://send?phone="+r.phone+(tx?"&text="+encodeURIComponent(tx):"");else waWin("https://web.whatsapp.com/send?phone="+r.phone+(tx?"&text="+encodeURIComponent(tx):""))}
+  apply([{r,patch:{s:true}}],"إرسال دعوة");seqRender();setTimeout(()=>$("seqNext").focus(),50)};
 /* ---- events ---- */
 $("tb").addEventListener("change",e=>{const tr=e.target.closest("tr");if(!tr)return;const r=rowMap().get(tr.dataset.k);if(!r)return;
   if(e.target.classList.contains("rel"))apply([{r,patch:{r:e.target.value}}],"تغيير صلة القرابة");
