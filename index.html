@@ -69,6 +69,9 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
 .gate{position:fixed;inset:0;background:linear-gradient(180deg,#EAF2F3,#CFDDE4);display:flex;align-items:center;justify-content:center;z-index:20}
 .gbox{background:#fff;border-radius:18px;padding:30px 36px;text-align:center;box-shadow:0 5px 0 #C9D9DE;max-width:480px}
 .gbox h2{margin:8px 0;font-size:26px}
+.fbox{display:flex;flex-direction:column;align-items:stretch;gap:4px}
+.fcnt{background:#1E4A38;color:#fff;border-radius:8px;padding:3px 10px;font-size:16px;font-weight:700;text-align:center;box-shadow:0 2px 0 #0F2C20}
+.bar{align-items:flex-start!important}
 .empty{padding:40px;text-align:center;font-size:19px}
 @media(max-width:760px){th:nth-child(1),td:nth-child(1){display:none}td.ph{font-size:15px}.btn{font-size:15px;padding:8px 11px}}
 </style>
@@ -130,11 +133,12 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
 
   <div class="bar">
     <input type="text" id="q" placeholder="بحث بالاسم أو الجوال">
-    <select id="fRel"><option value="">كل صلات القرابة</option><option value="-">بدون صلة قرابة</option></select>
-    <select id="fK"><option value="">المؤشر وغير المؤشر</option><option value="1">المؤشر عليهم فقط</option><option value="0">غير المؤشر عليهم</option></select>
-    <select id="fSent"><option value="">الكل</option><option value="1">أُرسلت</option><option value="0">لم تُرسل</option></select>
+    <div class="fbox"><select id="fRel"><option value="">كل صلات القرابة</option><option value="-">بدون صلة قرابة</option></select><div class="fcnt" id="cRel"></div></div>
+    <div class="fbox"><select id="fK"><option value="">المؤشر وغير المؤشر</option><option value="1">المؤشر عليهم فقط</option><option value="0">غير المؤشر عليهم</option></select><div class="fcnt" id="cK"></div></div>
+    <div class="fbox"><select id="fSent"><option value="">الكل</option><option value="1">أُرسلت</option><option value="0">لم تُرسل</option></select><div class="fcnt" id="cSent"></div></div>
   </div>
   <div class="bar" id="bulk">
+    <span class="fcnt" id="cRes" style="font-size:18px;padding:6px 14px;background:#8FB59D;box-shadow:0 3px 0 #6B988D"></span>
     <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" class="sel" id="selAll"> تأشير كل أسماء هذه الصفحة</label>
         <button class="btn b-out" id="allOut"><svg><use href="#i-ban"/></svg> استبعاد كل نتائج البحث</button>
   </div>
@@ -187,8 +191,21 @@ function stats(){const a=allRows();$("kCount").textContent=a.filter(r=>r.k).leng
 function waLink(r){const t=tpl.replace(/\{الاسم\}/g,r.name);return "https://wa.me/"+r.phone+(t?"?text="+encodeURIComponent(t):"")}
 function relOpts(v){let h='<option value="">—</option>';const list=RELS.includes(v)||!v?RELS:[v,...RELS];for(const x of list)h+=`<option${x===v?" selected":""}>${esc(x)}</option>`;return h}
 let cur=[];
+function counts(){
+  const rows=allRows().filter(r=>tab==="out"?r.out:(!r.out&&(tab!=="biz"||r.biz)));
+  const rel={},nk=rows.filter(r=>r.k).length,ns=rows.filter(r=>r.sent).length;let none=0;
+  for(const r of rows){if(r.rel)rel[r.rel]=(rel[r.rel]||0)+1;else none++}
+  for(const o of $("fRel").options){const v=o.value,base=o.dataset.t||(o.dataset.t=o.textContent);
+    const n=v===""?rows.length:v==="-"?none:(rel[v]||0);o.textContent=base+" ("+n+")"}
+  const setK=[rows.length,nk,rows.length-nk];[...$("fK").options].forEach((o,i)=>{const b=o.dataset.t||(o.dataset.t=o.textContent);o.textContent=b+" ("+setK[i]+")"});
+  const setS=[rows.length,ns,rows.length-ns];[...$("fSent").options].forEach((o,i)=>{const b=o.dataset.t||(o.dataset.t=o.textContent);o.textContent=b+" ("+setS[i]+")"});
+  const fr=$("fRel").value,fk=$("fK").value,fs=$("fSent").value;
+  $("cRel").textContent="العدد: "+(fr===""?rows.length:fr==="-"?none:(rel[fr]||0));
+  $("cK").textContent="العدد: "+(fk===""?rows.length:fk==="1"?nk:rows.length-nk);
+  $("cSent").textContent="العدد: "+(fs===""?rows.length:fs==="1"?ns:rows.length-ns);
+}
 function render(){
-  stats();cur=filtered();const pages=Math.max(1,Math.ceil(cur.length/PER));if(page>=pages)page=pages-1;
+  stats();counts();cur=filtered();const pages=Math.max(1,Math.ceil(cur.length/PER));if(page>=pages)page=pages-1;
   const slice=cur.slice(page*PER,page*PER+PER);
   if(!slice.length){$("tb").innerHTML='<tr><td colspan="8" class="empty">لا توجد أسماء هنا</td></tr>'}
   else $("tb").innerHTML=slice.map((r,i)=>{const k=key(r);return `<tr class="${r.sent?"sent":""}" data-k="${esc(k)}">
@@ -200,7 +217,7 @@ function render(){
     <td><a class="btn b-wa wa" href="${waLink(r)}" target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg> أرسل</a></td>
     <td style="text-align:center"><input type="checkbox" class="chk sent"${r.sent?" checked":""}></td>
     <td>${r.out?'<button class="btn b-nav tog" style="padding:6px 10px;font-size:15px"><svg><use href="#i-back"/></svg> استرجاع</button>':'<button class="btn b-out tog" style="padding:6px 10px;font-size:15px"><svg><use href="#i-ban"/></svg> استبعاد</button>'}</td></tr>`}).join("");
-  $("pinfo").textContent=`صفحة ${page+1} من ${pages} — ${cur.length.toLocaleString("en-US")} اسم`;
+  $("cRes").textContent="نتيجة التصفية: "+cur.length.toLocaleString("en-US")+" اسم";$("pinfo").textContent=`صفحة ${page+1} من ${pages} — ${cur.length.toLocaleString("en-US")} اسم`;
   $("allOut").classList.toggle("hidden",tab==="out");$("selAll").checked=false;
 }
 function key(r){return r.added?"a:"+r.id:"p:"+r.phone}
@@ -265,7 +282,7 @@ $("prev").onclick=()=>{if(page>0){page--;render();scrollTo(0,0)}};
 $("next").onclick=()=>{if((page+1)*PER<cur.length){page++;render();scrollTo(0,0)}};
 $("showMsg").onclick=()=>$("msgPanel").classList.toggle("hidden");
 $("showAdd").onclick=()=>$("addPanel").classList.toggle("hidden");
-$("aRel").innerHTML=relOpts("");for(const x of RELS)$("fRel").insertAdjacentHTML("beforeend",`<option>${x}</option>`);
+$("aRel").innerHTML=relOpts("");for(const x of RELS)$("fRel").insertAdjacentHTML("beforeend",`<option value="${x}">${x}</option>`);
 $("saveTpl").onclick=async()=>{tpl=$("tpl").value;render();if(db){try{await db.doc("settings/main").set({tpl});toast("حُفظ نص الدعوة")}catch(e){toast("تعذّر حفظ النص")}}};
 $("addBtn").onclick=async()=>{const name=$("aName").value.trim(),phone=normPhone($("aPhone").value);$("aErr").textContent="";
   if(!name)return $("aErr").textContent="اكتب الاسم";if(phone.length<11)return $("aErr").textContent="رقم الجوال غير صحيح";
