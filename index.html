@@ -89,6 +89,20 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
 .nmin{font-family:inherit;font-size:17px;padding:6px 10px;border:2px solid #6B988D;border-radius:8px;width:min(320px,100%)}
 .nmok,.nmno{border:0;border-radius:8px;padding:6px 10px;margin-inline-start:6px;cursor:pointer;font-family:inherit;font-size:15px;font-weight:700}
 .nmok{background:#8FB59D;color:#fff;box-shadow:0 2px 0 #6B988D}.nmno{background:#F7E6D6;color:#7A4416;box-shadow:0 2px 0 #E2C3A5}
+
+/* ---- layout B: right sidebar ---- */
+#app.lb{max-width:1500px;display:grid;grid-template-columns:310px minmax(0,1fr);gap:16px;align-items:start}
+.side{background:#fff;border-radius:16px;padding:14px;box-shadow:0 3px 0 #C9D9DE;display:flex;flex-direction:column;gap:10px;position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}
+.side .btn{width:100%;justify-content:flex-start;font-size:17px}
+.side .stats{grid-template-columns:1fr 1fr;gap:8px;margin:0}.side .stat{padding:6px}.side .stat .v{font-size:22px}.side .stat .l{font-size:14px}
+.side .tabs{flex-direction:column;margin:0}.side .tab{width:100%;justify-content:space-between}
+.side select{width:100%}.side h1{font-size:24px}
+.sidelbl{font-weight:800;color:#6B988D;font-size:15px;margin-top:4px;border-top:1px solid #E3ECEE;padding-top:8px}
+.side #save{font-size:13px;padding:3px 10px;align-self:flex-start}
+.side .fcnt{display:none}.side #cRes{display:block;font-size:17px;padding:6px 10px;background:#8FB59D;box-shadow:0 3px 0 #6B988D;color:#fff;border-radius:8px;text-align:center;font-weight:700}
+.mainc .mbar{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.mainc #q{flex:1;min-width:220px}
+@media(max-width:900px){#app.lb{grid-template-columns:minmax(0,1fr);padding-left:12px;padding-right:12px}.side{position:static;max-height:none}.mainc .card{overflow-x:auto}.mainc table{min-width:760px}}
 .empty{padding:40px;text-align:center;font-size:19px}
 @media(max-width:760px){th:nth-child(1),td:nth-child(1){display:none}td.ph{font-size:15px}.btn{font-size:15px;padding:8px 11px}}
 </style>
@@ -201,6 +215,22 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
   <div id="seqHint" class="note" style="margin-top:8px">تُفتح المحادثة في نافذة واتساب بجانب الصفحة: اضغط Ctrl+V ثم Enter، ثم عُد واضغط «افتح محادثة التالي».</div>
 </div>
 <div id="toast"></div>
+<script>
+(function(){const $=id=>document.getElementById(id),app=$("app");
+ const top=app.querySelector(".top"),h1=top.querySelector("h1"),btns=top.querySelector(":scope > div"),save=$("save"),statusWrap=$("status").parentElement,
+  stats=app.querySelector(".stats"),tabs=app.querySelector(".tabs"),bars=app.querySelectorAll(".bar"),q=$("q"),cRes=$("cRes"),
+  selAll=$("selAll").closest("label"),allOut=$("allOut"),card=app.querySelector(".card"),
+  panels=[$("imgPanel"),$("msgPanel"),$("addPanel")];
+ const side=document.createElement("aside");side.className="side";const main=document.createElement("div");main.className="mainc";
+ const lbl=t=>{const d=document.createElement("div");d.className="sidelbl";d.textContent=t;return d};
+ side.append(h1,save,lbl("الإجراءات"),...btns.children,lbl("الأرقام"),stats,lbl("القوائم"),tabs,lbl("التصفية"));
+ app.querySelectorAll(".fbox").forEach(b=>side.appendChild(b));side.appendChild(cRes);
+ const mbar=document.createElement("div");mbar.className="mbar";mbar.append(q,selAll,allOut);
+ main.append(...panels,$("status"),mbar,card);
+ top.remove();statusWrap.remove();bars.forEach(b=>b.remove());
+ app.innerHTML="";app.classList.add("lb");app.append(side,main);
+})();
+</script>
 <script>
 const RELS=["أب","أم","والد","والدة","أخ","أخت","ابن","ابنة","زوجة","عم","عمة","خال","خالة","جد","جدة","ابن عم","بنت عم","ابن عمة","ابن خال","بنت خال","ابن خالة","ابن أخ","ابن أخت","زوج أخت","نسيب","قريب","جار","صديق","زميل عمل","أخرى"];
 const PER=100;
