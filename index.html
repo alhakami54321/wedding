@@ -103,6 +103,30 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
 .mainc .mbar{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
 .mainc #q{flex:1;min-width:220px}
 @media(max-width:900px){#app.lb{grid-template-columns:minmax(0,1fr);padding-left:12px;padding-right:12px}.side{position:static;max-height:none}.mainc .card{overflow-x:auto}.mainc table{min-width:760px}}
+
+/* ---- sidebar ordered by workflow ---- */
+#floatSave{display:none!important}
+.wrap{padding-left:18px!important}
+.side{gap:10px;padding:0;background:transparent;box-shadow:none}
+.grp{background:#fff;border-radius:14px;padding:10px 12px 12px;box-shadow:0 3px 0 #C9D9DE;display:flex;flex-direction:column;gap:8px}
+.grp h3{margin:0;font-size:16px;color:#1E4A38;display:flex;align-items:center;gap:8px}
+.grp h3 .no{background:#1E4A38;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.hd{background:#fff;border-radius:14px;padding:12px;box-shadow:0 3px 0 #C9D9DE;display:flex;flex-direction:column;gap:8px}
+.hd h1{font-size:22px;white-space:nowrap;margin:0}
+.sv{display:grid;grid-template-columns:1fr auto;gap:8px}
+.sv .btn{justify-content:center;font-size:17px;width:100%}
+.kbox{background:#1E4A38;color:#fff;border-radius:12px;padding:4px 14px;text-align:center;box-shadow:0 3px 0 #0F2C20}
+.kbox #kCount{font-size:24px!important;font-weight:800;line-height:1.1}.kbox .t{font-size:13px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grp .btn{justify-content:center;font-size:15px;width:100%;white-space:nowrap;padding:9px 6px}
+.grp #seqOpen,.grp #xl{font-size:17px;padding:11px}
+.grp .stats{grid-template-columns:1fr 1fr;gap:6px;margin:0}.grp .stat{padding:5px;box-shadow:0 2px 0 #E3ECEE}
+.grp .tabs{flex-direction:column;margin:0;gap:6px}.grp .tab{justify-content:space-between}
+.side .btn.out{background:transparent;box-shadow:none;color:#7A4416;text-decoration:underline;font-size:15px;width:auto;align-self:center}
+#tb tr.mk td{background:#EEF7EF}
+.tag.t-star{display:none}
+td{padding:7px 10px}
+.sidelbl{display:none}
 .empty{padding:40px;text-align:center;font-size:19px}
 @media(max-width:760px){th:nth-child(1),td:nth-child(1){display:none}td.ph{font-size:15px}.btn{font-size:15px;padding:8px 11px}}
 </style>
@@ -182,7 +206,7 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
     <input type="text" id="q" placeholder="بحث بالاسم أو الجوال">
     <div class="fbox"><select id="fRel"><option value="">كل صلات القرابة</option><option value="-">بدون صلة قرابة</option></select><div class="fcnt" id="cRel"></div></div>
     <div class="fbox"><select id="fK"><option value="">المؤشر وغير المؤشر</option><option value="1">المؤشر عليهم فقط</option><option value="0">غير المؤشر عليهم</option></select><div class="fcnt" id="cK"></div></div>
-    <div class="fbox"><select id="fSent"><option value="">الكل</option><option value="1">أُرسلت</option><option value="0">لم تُرسل</option></select><div class="fcnt" id="cSent"></div></div>
+    <div class="fbox"><select id="fSent"><option value="">حالة الإرسال: الكل</option><option value="1">أُرسلت</option><option value="0">لم تُرسل</option></select><div class="fcnt" id="cSent"></div></div>
   </div>
   <div class="bar" id="bulk">
     <span class="fcnt" id="cRes" style="font-size:18px;padding:6px 14px;background:#8FB59D;box-shadow:0 3px 0 #6B988D"></span>
@@ -229,6 +253,23 @@ td select{font-size:16px;padding:6px 8px;min-width:120px}
  main.append(...panels,$("status"),mbar,card);
  top.remove();statusWrap.remove();bars.forEach(b=>b.remove());
  app.innerHTML="";app.classList.add("lb");app.append(side,main);
+})();
+</script>
+<script>
+(function(){const $=id=>document.getElementById(id),side=document.querySelector('.side');
+ const h1=side.querySelector('h1'),save=$('save'),stats=side.querySelector('.stats'),tabs=side.querySelector('.tabs'),
+  fboxes=[...side.querySelectorAll('.fbox')],cRes=$('cRes'),sb=$('saveNow'),kc=$('kCount'),
+  seqB=$('seqOpen'),xlB=$('xl'),undoB=$('undo'),addB=$('showAdd'),imgB=$('showImg'),msgB=$('showMsg'),lo=$('logout');
+ const G=(n,t,...els)=>{const g=document.createElement('div');g.className='grp';const hh=document.createElement('h3');hh.innerHTML=(n?'<span class="no">'+n+'</span>':'')+t;g.append(hh,...els);return g};
+ const g2=(...b)=>{const d=document.createElement('div');d.className='g2';d.append(...b);return d};
+ const hd=document.createElement('div');hd.className='hd';
+ const sv=document.createElement('div');sv.className='sv';sb.className='btn b-main';
+ const kb=document.createElement('div');kb.className='kbox';kb.innerHTML='<div class="t">المؤشر عليهم</div>';kc.removeAttribute('style');kb.appendChild(kc);
+ sv.append(sb,kb);hd.append(h1,save,sv);
+ undoB.lastChild.textContent=' تراجع';lo.classList.add('out');
+ side.innerHTML='';
+ side.append(hd,G('','ملخص القائمة',stats),G('1','اختر القائمة',tabs),G('2','صفِّ الأسماء',...fboxes,cRes),
+  G('3','جهّز الدعوة ثم أرسل',g2(imgB,msgB),seqB),G('','أدوات',g2(addB,undoB),xlB),lo);
 })();
 </script>
 <script>
@@ -295,7 +336,7 @@ function render(){
   stats();counts();cur=filtered();const pages=Math.max(1,Math.ceil(cur.length/PER));if(page>=pages)page=pages-1;
   const slice=cur.slice(page*PER,page*PER+PER);
   if(!slice.length){$("tb").innerHTML='<tr><td colspan="8" class="empty">لا توجد أسماء هنا</td></tr>'}
-  else $("tb").innerHTML=slice.map((r,i)=>{const k=key(r);return `<tr class="${r.sent?"sent":""}" data-k="${esc(k)}">
+  else $("tb").innerHTML=slice.map((r,i)=>{const k=key(r);return `<tr class="${r.sent?"sent":""}${r.k?" mk":""}" data-k="${esc(k)}">
     <td><input type="checkbox" class="sel rs" title="تأشير"${r.k?" checked":""}></td>
     <td class="num">${page*PER+i+1}</td>
     <td class="nmcell"><span class="nm">${esc(r.name)}</span><button class="edn" title="تعديل الاسم" aria-label="تعديل الاسم"><svg><use href="#i-pen"/></svg></button>${r.star?'<span class="tag t-star">مميز</span>':""}${r.biz?'<span class="tag t-biz">أعمال</span>':""}${r.added?'<span class="tag t-add">مضاف</span>':""}</td>
